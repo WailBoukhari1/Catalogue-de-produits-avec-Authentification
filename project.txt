@@ -1,0 +1,134 @@
+Project context
+En tant que en tant que Développeur Full Stack capable de sécuriser et déployer une application web, le développeur doit : Sécuriser les APIs via différentes méthodes d'authentification (Basic, Session, JWT) Conteneuriser et déployer l'application via Docker et Jenkins Maintenir la documentation technique et former les équipes
+
+​
+
+Entités Principales
+Produit : designation (String), prix (Double), quantite (Integer)
+Categorie : nom (String), description (String)
+User    : login (String), password (String), active (Boolean), roles (Collection de Role)
+Role    : name (String)
+
+Une catégorie peut avoir plusieurs produits
+Un produit appartient à une seule catégorie
+​
+
+Fonctionnalités Requises
+
+Gestion des Produits :
+Lister les produits avec pagination (USER ou ADMIN)
+Rechercher les produits par désignation avec introduction de la pagination et sorting (USER ou ADMIN)
+Rechercher les produits par catégorie (USER ou ADMIN)
+Filtrer les produits par catégorie avec pagination et sorting (USER ou ADMIN)
+Ajouter un nouveau produit (ADMIN uniquement)
+Modifier un produit existant (ADMIN uniquement)
+Supprimer un produit (ADMIN uniquement)
+
+/api/user/products/**
+/api/admin/products/**
+​
+
+Gestion des Catégories :
+Lister les catégories avec pagination (USER ou ADMIN)
+Rechercher les catégories par nom avec introduction de la pagination et sorting (USER ou ADMIN)
+Lister les produits d'une catégorie avec pagination et sorting (USER ou ADMIN)
+Ajouter une nouvelle catégorie (ADMIN uniquement)
+Modifier une catégorie existante (ADMIN uniquement)
+Supprimer une catégorie (ADMIN uniquement)
+
+/api/user/categories/**
+/api/admin/categories/**
+​
+
+Gestion des Utilisateurs :
+/api/auth/login (authentification)
+POST /api/auth/register (création de compte)
+GET /api/admin/users (liste des utilisateurs, ADMIN uniquement)
+PUT /api/admin/users/{id}/roles (gestion des rôles, ADMIN uniquement)
+
+​
+
+Sécurité :
+
+Mise en place de Spring Security
+Authentification stateful (basée sur session) via JdbcAuthentication
+Les URLs /api/admin/* nécessitent le rôle ADMIN
+Les URLs /api/user/* nécessitent le rôle USER
+Utiliser BCryptPasswordEncoder pour le cryptage des mots de passe ou un autre encoder plus robuste
+
+​
+
+Dans une API REST sécurisée avec Spring Security, chaque endpoint protégé nécessite une authentification. Par défaut, sans configuration particulière, Spring Security exige une authentification pour tous les endpoints. Pour tester via Postman, vous devez vous authentifier pour accéder aux endpoints protégés. Sans authentification, vous recevrez une erreur 401 Unauthorized.
+
+​
+
+Pour simplifier les tests en développement, il est courant soit de désactiver la sécurité au niveau de pom.xml ou au niveau du ficher application soit créer une classe de configuration Spring Security utilisé dans le profil (dev/test) et qui peut :
+
+Soit désactiver complètement la sécurité
+Soit configurer une authentification basique via .inMemoryAuthentication() (sans encodage (NoOp) ou avec encodage BCrypt)
+Soit permettre certains endpoints en accès libre avec .permitAll()
+​
+
+il est donc demandé d'implémenter les deux profils : test pour bypasser la sécurité en utilisant les solutions proposées ci dessus, et le profil prod dans lequel on execute l'authentification via jdbcAuthentication
+
+​
+
+Couches applicatives :
+
+Controller, Service, Repository, DTO, Mapper, Exception, Validation, Utils, Tests ...
+
+​
+
+Technologies et concepts à utiliser :
+
+Spring Boot
+
+REST API
+
+Spring Data JPA
+
+Gestion des exceptions : @ControllerAdvice , exceptions métier personnalisées
+
+Validation : Bean Validation (@Valid, @NotNull, etc.), validateurs personnalisés
+
+Bases de données : mariaDB ou OracleXE
+
+CI/CD et Qualité :
+
+Jenkins pour l'intégration et le déploiement continu
+Conteneurisation avec Docker :
+
+Structure du Dockerfile
+Scripts de démarrage
+​
+
+Exigences techniques à utiliser :
+Profiles (dev, prod) :
+
+dev pour bypasser l'authentifcation avec autres utilités si vous voulez
+prod pour utiliser l'authentification avec jdbcAuthentication avec autres utilités si vous voulez
+Configuration purement XML ou uniquement avec annotations au choix
+
+Tests unitaires et d'intégration (JUnit et Mockito)
+
+Tests de sécurité basiques
+
+Design patterns (Repository, DTO, Mapper)
+
+Système de logging (LOGGER)
+
+Validations métier
+
+Gestion des transactions
+
+Fonctionnalités Java : Stream API, Lambda expressions, Java Time API, Optional, Collection API
+
+​
+
+Outils de travail :
+
+Git avec branches, IDE au choix, JIRA + Scrum, Lombok, Spring Boot DevTools, SonarLint, Debugger, Tests via Postman, Swagger pour documentation API
+
+​
+
+Interdit : authentification stateless via JWT ou Basic Auth
