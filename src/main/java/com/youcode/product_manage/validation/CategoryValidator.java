@@ -1,10 +1,12 @@
 package com.youcode.product_manage.validation;
 
+import org.springframework.stereotype.Component;
+
 import com.youcode.product_manage.dto.request.CategoryRequest;
 import com.youcode.product_manage.exception.ValidationException;
 import com.youcode.product_manage.repository.CategoryRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
