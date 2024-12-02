@@ -8,14 +8,18 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+    
+    private final PasswordEncoder passwordEncoder;
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,21 +48,16 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         UserDetails admin = User.builder()
             .username("admin")
-            .password(passwordEncoder().encode("admin"))
+            .password(passwordEncoder.encode("admin"))
             .roles("ADMIN", "USER")
             .build();
             
         UserDetails user = User.builder()
             .username("user")
-            .password(passwordEncoder().encode("user"))
+            .password(passwordEncoder.encode("user"))
             .roles("USER")
             .build();
             
         return new InMemoryUserDetailsManager(admin, user);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }
