@@ -1,4 +1,7 @@
 package com.youcode.product_manage.exception;
 
-public class ValidationException {
+public class ValidationException extends RuntimeException {
+    public ValidationException(String message) {
+        super(message);
+    }
 }
