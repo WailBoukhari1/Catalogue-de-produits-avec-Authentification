@@ -49,11 +49,6 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryResponse getCategoryById(Long id) {
-        return categoryMapper.toResponse(findCategoryById(id));
-    }
-
-    @Override
     public CategoryResponse createCategory(CategoryRequest request) {
         Category category = categoryMapper.toEntity(request);
         return categoryMapper.toResponse(categoryRepository.save(category));

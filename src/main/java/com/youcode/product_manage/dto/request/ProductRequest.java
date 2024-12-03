@@ -1,5 +1,6 @@
 package com.youcode.product_manage.dto.request;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -15,9 +16,10 @@ public class ProductRequest {
     private Double price;
     
     @NotNull(message = "Quantity is required")
-    @Positive(message = "Quantity must be positive")
+    @Min(value = 0, message = "Quantity cannot be negative")
     private Integer quantity;
     
     @NotNull(message = "Category ID is required")
+    @Positive(message = "Category ID must be positive")
     private Long categoryId;
 } 

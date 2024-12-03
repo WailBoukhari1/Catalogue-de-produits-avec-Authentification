@@ -1,0 +1,419 @@
+{
+    "info": {
+      "name": "Product Management API",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Auth",
+        "item": [
+          {
+            "name": "Register",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "url": {
+                "raw": "http://localhost:8080/api/auth/register",
+                "host": ["localhost"],
+                "port": "8080",
+                "path": ["api", "auth", "register"]
+              },
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"login\": \"newuser\",\n  \"password\": \"Password123\",\n  \"email\": \"newuser@example.com\"\n}"
+              }
+            }
+          },
+          {
+            "name": "Login",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                }
+              ],
+              "url": {
+                "raw": "http://localhost:8080/api/auth/login",
+                "host": ["localhost"],
+                "port": "8080",
+                "path": ["api", "auth", "login"]
+              },
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "login",
+                    "value": "newuser"
+                  },
+                  {
+                    "key": "password",
+                    "value": "Password123"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "name": "Logout",
+            "request": {
+              "method": "POST",
+              "url": {
+                "raw": "http://localhost:8080/api/auth/logout",
+                "host": ["localhost"],
+                "port": "8080",
+                "path": ["api", "auth", "logout"]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Admin",
+        "item": [
+          {
+            "name": "Users",
+            "item": [
+              {
+                "name": "Get All Users",
+                "request": {
+                  "method": "GET",
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/users?page=0&size=10",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "users"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "0"
+                      },
+                      {
+                        "key": "size",
+                        "value": "10"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "Update User Roles",
+                "request": {
+                  "method": "PUT",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/users/1/roles",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "users", "1", "roles"]
+                  },
+                  "body": {
+                    "mode": "raw",
+                    "raw": "[\"ROLE_ADMIN\", \"ROLE_USER\"]"
+                  }
+                }
+              },
+              {
+                "name": "Delete User",
+                "request": {
+                  "method": "DELETE",
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/users/1",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "users", "1"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "Products",
+            "item": [
+              {
+                "name": "Create Product",
+                "request": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/products",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "products"]
+                  },
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"designation\": \"New Product\",\n  \"price\": 99.99,\n  \"quantity\": 100,\n  \"categoryId\": 1\n}"
+                  }
+                }
+              },
+              {
+                "name": "Update Product",
+                "request": {
+                  "method": "PUT",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/products/1",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "products", "1"]
+                  },
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"designation\": \"Updated Product\",\n  \"price\": 149.99,\n  \"quantity\": 50,\n  \"categoryId\": 1\n}"
+                  }
+                }
+              },
+              {
+                "name": "Delete Product",
+                "request": {
+                  "method": "DELETE",
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/products/1",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "products", "1"]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "Categories",
+            "item": [
+              {
+                "name": "Create Category",
+                "request": {
+                  "method": "POST",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/categories",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "categories"]
+                  },
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"name\": \"New Category\",\n  \"description\": \"Category description\"\n}"
+                  }
+                }
+              },
+              {
+                "name": "Update Category",
+                "request": {
+                  "method": "PUT",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/categories/1",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "categories", "1"]
+                  },
+                  "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"name\": \"Updated Category\",\n  \"description\": \"Updated description\"\n}"
+                  }
+                }
+              },
+              {
+                "name": "Delete Category",
+                "request": {
+                  "method": "DELETE",
+                  "url": {
+                    "raw": "http://localhost:8080/api/admin/categories/1",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "admin", "categories", "1"]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "User",
+        "item": [
+          {
+            "name": "Products",
+            "item": [
+              {
+                "name": "Get All Products",
+                "request": {
+                  "method": "GET",
+                  "url": {
+                    "raw": "http://localhost:8080/api/user/products?page=0&size=10&sortBy=designation",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "user", "products"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "0"
+                      },
+                      {
+                        "key": "size",
+                        "value": "10"
+                      },
+                      {
+                        "key": "sortBy",
+                        "value": "designation"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "Search Products",
+                "request": {
+                  "method": "GET",
+                  "url": {
+                    "raw": "http://localhost:8080/api/user/products/search?designation=product&page=0&size=10&sortBy=designation",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "user", "products", "search"],
+                    "query": [
+                      {
+                        "key": "designation",
+                        "value": "product"
+                      },
+                      {
+                        "key": "page",
+                        "value": "0"
+                      },
+                      {
+                        "key": "size",
+                        "value": "10"
+                      },
+                      {
+                        "key": "sortBy",
+                        "value": "designation"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "Get Products by Category",
+                "request": {
+                  "method": "GET",
+                  "url": {
+                    "raw": "http://localhost:8080/api/user/products/category/1?page=0&size=10&sortBy=designation",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "user", "products", "category", "1"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "0"
+                      },
+                      {
+                        "key": "size",
+                        "value": "10"
+                      },
+                      {
+                        "key": "sortBy",
+                        "value": "designation"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "Categories",
+            "item": [
+              {
+                "name": "Get All Categories",
+                "request": {
+                  "method": "GET",
+                  "url": {
+                    "raw": "http://localhost:8080/api/user/categories?page=0&size=10&sortBy=name",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "user", "categories"],
+                    "query": [
+                      {
+                        "key": "page",
+                        "value": "0"
+                      },
+                      {
+                        "key": "size",
+                        "value": "10"
+                      },
+                      {
+                        "key": "sortBy",
+                        "value": "name"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "name": "Search Categories",
+                "request": {
+                  "method": "GET",
+                  "url": {
+                    "raw": "http://localhost:8080/api/user/categories/search?name=category&page=0&size=10&sortBy=name",
+                    "host": ["localhost"],
+                    "port": "8080",
+                    "path": ["api", "user", "categories", "search"],
+                    "query": [
+                      {
+                        "key": "name",
+                        "value": "category"
+                      },
+                      {
+                        "key": "page",
+                        "value": "0"
+                      },
+                      {
+                        "key": "size",
+                        "value": "10"
+                      },
+                      {
+                        "key": "sortBy",
+                        "value": "name"
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+}

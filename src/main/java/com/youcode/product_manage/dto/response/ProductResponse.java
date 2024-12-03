@@ -8,5 +8,5 @@ public class ProductResponse {
     private String designation;
     private Double price;
     private Integer quantity;
-    // private CategoryResponse category;
+    private CategoryResponse category;
 } 

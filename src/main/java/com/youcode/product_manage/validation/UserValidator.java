@@ -4,64 +4,25 @@ import org.springframework.stereotype.Component;
 
 import com.youcode.product_manage.dto.request.UserRequest;
 import com.youcode.product_manage.exception.ValidationException;
-import com.youcode.product_manage.repository.UserRepository;
-
-import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
 public class UserValidator {
-    private final UserRepository userRepository;
-
-    public void validateForCreation(UserRequest request) {
-        validateLogin(request.getLogin());
-        validatePassword(request.getPassword());
-        validateLoginUniqueness(request.getLogin());
-    }
-
-    public void validateForUpdate(Long id, UserRequest request) {
-        validateLogin(request.getLogin());
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            validatePassword(request.getPassword());
+    
+    public void validateRegistration(UserRequest request) {
+        if (request == null) {
+            throw new ValidationException("User request cannot be null");
         }
-        validateLoginUniquenessForUpdate(id, request.getLogin());
-    }
-
-    private void validateLogin(String login) {
-        if (login == null || login.trim().length() < 3) {
-            throw new ValidationException("Login must be at least 3 characters");
+        
+        if (request.getLogin() == null || request.getLogin().trim().isEmpty()) {
+            throw new ValidationException("Login is required");
         }
-        if (login.trim().length() > 50) {
-            throw new ValidationException("Login must not exceed 50 characters");
+        
+        if (request.getPassword() == null || !request.getPassword().matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$")) {
+            throw new ValidationException("Password must be at least 8 characters and contain at least one digit, lowercase and uppercase letter");
         }
-    }
-
-    private void validatePassword(String password) {
-        if (password == null || password.length() < 6) {
-            throw new ValidationException("Password must be at least 6 characters");
+        
+        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new ValidationException("Invalid email format");
         }
-        if (!password.matches(".*[A-Z].*")) {
-            throw new ValidationException("Password must contain at least one uppercase letter");
-        }
-        if (!password.matches(".*[a-z].*")) {
-            throw new ValidationException("Password must contain at least one lowercase letter");
-        }
-        if (!password.matches(".*\\d.*")) {
-            throw new ValidationException("Password must contain at least one number");
-        }
-    }
-
-    private void validateLoginUniqueness(String login) {
-        if (userRepository.existsByLogin(login)) {
-            throw new ValidationException("Login already exists");
-        }
-    }
-
-    private void validateLoginUniquenessForUpdate(Long id, String login) {
-        userRepository.findByLogin(login).ifPresent(user -> {
-            if (!user.getId().equals(id)) {
-                throw new ValidationException("Login already exists");
-            }
-        });
     }
 }

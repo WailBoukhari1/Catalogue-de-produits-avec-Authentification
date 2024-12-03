@@ -12,6 +12,7 @@ import com.youcode.product_manage.entity.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByLogin(String login);
     boolean existsByLogin(String login);
+    boolean existsByEmail(String email);
     
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.login = :login")
     Optional<User> findByLoginWithRoles(String login);

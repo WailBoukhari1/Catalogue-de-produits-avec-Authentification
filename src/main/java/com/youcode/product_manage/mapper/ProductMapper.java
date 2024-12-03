@@ -11,6 +11,7 @@ import org.mapstruct.MappingTarget;
 public interface ProductMapper {
     
     @Mapping(target = "category.id", source = "categoryId")
+    @Mapping(target = "id", ignore = true)
     Product toEntity(ProductRequest request);
     
     ProductResponse toResponse(Product product);
