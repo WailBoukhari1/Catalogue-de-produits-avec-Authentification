@@ -71,10 +71,10 @@ public class ProductController {
     @PutMapping("/api/admin/products/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
-            @PathVariable Long id, @Valid @RequestBody ProductRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(
-            "Product updated successfully", 
-            productService.updateProduct(id, request)));
+            @PathVariable Long id, 
+            @Valid @RequestBody ProductRequest request) {
+        ProductResponse response = productService.updateProduct(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Product updated successfully", response));
     }
 
     @DeleteMapping("/api/admin/products/{id}")

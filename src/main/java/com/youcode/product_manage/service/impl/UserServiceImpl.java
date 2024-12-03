@@ -35,8 +35,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse register(UserRequest request) {
-        userValidator.validateRegistration(request);
-        
         if (userRepository.existsByLogin(request.getLogin())) {
             throw new ValidationException("Login already exists");
         }

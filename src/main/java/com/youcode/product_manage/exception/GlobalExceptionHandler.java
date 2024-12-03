@@ -1,7 +1,10 @@
 package com.youcode.product_manage.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
@@ -12,8 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.youcode.product_manage.dto.response.ApiResponse;
 
-import java.util.HashMap;
-import java.util.Map;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -58,5 +61,38 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<String> handleGlobalException(Exception ex) {
         return ApiResponse.error("An unexpected error occurred");
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        if (ex.getCause() instanceof ConstraintViolationException) {
+            return ApiResponse.error("Database constraint violation: Duplicate entry or invalid reference");
+        }
+        return ApiResponse.error("Data integrity violation occurred");
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<String> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<String> handleDuplicateResourceException(DuplicateResourceException ex) {
+        return ApiResponse.error(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidOperationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<String> handleInvalidOperationException(InvalidOperationException ex) {
+        return ApiResponse.error(ex.getMessage());
     }
 }

@@ -41,7 +41,8 @@ public class ProdSecurityConfig {
                 .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
                 .anyRequest().authenticated())
-            .headers(headers -> headers.frameOptions().disable())
+            .headers(headers -> headers.frameOptions(frameOptionsConfig -> 
+                frameOptionsConfig.disable()))
             .build();
     }
 
