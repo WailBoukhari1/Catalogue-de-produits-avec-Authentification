@@ -9,10 +9,8 @@ import com.youcode.product_manage.dto.response.PageResponse;
 import com.youcode.product_manage.dto.response.UserResponse;
 
 public interface UserService {
+    UserResponse register(UserRequest request);
     PageResponse<UserResponse> getAllUsers(Pageable pageable);
-    UserResponse getUserById(Long id);
-    UserResponse createUser(UserRequest request);
-    UserResponse updateUser(Long id, UserRequest request);
+    UserResponse updateUserRoles(Long id, Set<String> roles);
     void deleteUser(Long id);
-    UserResponse updateUserRoles(Long id, Set<String> roleNames);
 }

@@ -3,46 +3,41 @@ package com.youcode.product_manage.validation;
 import org.springframework.stereotype.Component;
 
 import com.youcode.product_manage.dto.request.CategoryRequest;
+import com.youcode.product_manage.entity.Category;
+import com.youcode.product_manage.exception.InvalidOperationException;
 import com.youcode.product_manage.exception.ValidationException;
-import com.youcode.product_manage.repository.CategoryRepository;
-
-import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
 public class CategoryValidator {
-    private final CategoryRepository categoryRepository;
-
-    public void validateForCreation(CategoryRequest request) {
+    
+    public void validateForUpdate(Category existingCategory, CategoryRequest request) {
         validateName(request.getName());
-        validateNameUniqueness(request.getName());
+        validateDescription(request.getDescription());
     }
-
-    public void validateForUpdate(Long id, CategoryRequest request) {
+    
+    public void validateForCreate(CategoryRequest request) {
         validateName(request.getName());
-        validateNameUniquenessForUpdate(id, request.getName());
+        validateDescription(request.getDescription());
     }
-
+    
+    public void validateForDelete(Category category) {
+        if (!category.getProducts().isEmpty()) {
+            throw new InvalidOperationException("Cannot delete category with existing products");
+        }
+    }
+    
     private void validateName(String name) {
-        if (name == null || name.trim().length() < 3) {
-            throw new ValidationException("Category name must be at least 3 characters");
+        if (name == null || name.trim().isEmpty()) {
+            throw new ValidationException("Category name cannot be empty");
         }
-        if (name.trim().length() > 50) {
-            throw new ValidationException("Category name must not exceed 50 characters");
-        }
-    }
-
-    private void validateNameUniqueness(String name) {
-        if (categoryRepository.existsByName(name)) {
-            throw new ValidationException("Category with name '" + name + "' already exists");
+        if (name.length() < 2 || name.length() > 50) {
+            throw new ValidationException("Category name must be between 2 and 50 characters");
         }
     }
-
-    private void validateNameUniquenessForUpdate(Long id, String name) {
-        categoryRepository.findByName(name).ifPresent(category -> {
-            if (!category.getId().equals(id)) {
-                throw new ValidationException("Category with name '" + name + "' already exists");
-            }
-        });
+    
+    private void validateDescription(String description) {
+        if (description != null && description.length() > 255) {
+            throw new ValidationException("Category description cannot exceed 255 characters");
+        }
     }
 }
