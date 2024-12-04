@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     tools {
-        maven 'Maven 3.9.6'
+        maven 'Maven 3.9.5'
         jdk 'JDK 17'
     }
     
@@ -12,16 +12,16 @@ pipeline {
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                bat 'mvn clean install -DskipTests'
             }
         }
         
         stage('Test') {
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
             post {
                 always {
@@ -30,42 +30,26 @@ pipeline {
             }
         }
         
-        stage('SonarQube Analysis') {
+        stage('Package') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar'
-                }
+                bat 'mvn package -DskipTests'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
-        
+
         stage('Docker Build') {
             steps {
-                sh 'docker build -t product-manage .'
-            }
-        }
-        
-        stage('Docker Push') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh '''
-                        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-                        docker tag product-manage $DOCKER_USERNAME/product-manage:latest
-                        docker push $DOCKER_USERNAME/product-manage:latest
-                    '''
-                }
-            }
-        }
-        
-        stage('Deploy') {
-            steps {
-                sh 'docker-compose up -d'
+                bat 'docker build -t product-manage .'
             }
         }
     }
     
     post {
-        always {
-            cleanWs()
+        failure {
+            echo 'Pipeline failed!'
+        }
+        success {
+            echo 'Pipeline succeeded!'
         }
     }
 }

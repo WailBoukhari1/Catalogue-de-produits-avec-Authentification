@@ -55,7 +55,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpSession session) {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpSession session) { 
         if (session != null) {
             session.invalidate();
         }
