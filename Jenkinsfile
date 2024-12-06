@@ -5,7 +5,8 @@ pipeline {
         DOCKER_IMAGE = "product-catalog"
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_NETWORK = "product-catalog-app_app-network"
-        DB_CREDS = credentials('db-credentials')
+        DB_USERNAME = credentials('db-username')
+        DB_PASSWORD = credentials('db-password')
     }
     
     stages {
@@ -53,8 +54,8 @@ pipeline {
                             --network ${DOCKER_NETWORK} \\
                             -p 8082:8080 \\
                             -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/product_manage \\
-                            -e SPRING_DATASOURCE_USERNAME=\${DB_CREDS_USR} \\
-                            -e SPRING_DATASOURCE_PASSWORD=\${DB_CREDS_PSW} \\
+                            -e SPRING_DATASOURCE_USERNAME=${DB_USERNAME} \\
+                            -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \\
                             -e SPRING_PROFILES_ACTIVE=prod \\
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
                             
@@ -67,7 +68,9 @@ pipeline {
     
     post {
         always {
-            deleteDir()
+            node {
+                deleteDir()
+            }
         }
         success {
             echo 'Pipeline completed successfully!'
