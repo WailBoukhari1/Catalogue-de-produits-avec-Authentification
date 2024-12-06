@@ -1,32 +1,37 @@
 pipeline {
     agent any
     
+    tools {
+        maven 'Maven'
+        jdk 'JDK17'
+    }
     environment {
         DOCKER_IMAGE = "product-catalog"
         DOCKER_TAG = "${BUILD_NUMBER}"
-        DOCKER_NETWORK = "app-network"
-        DB_CREDS = credentials('db-credentials')
+        DOCKER_NETWORK = "product-catalog-app_app-network"
     }
     
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+                sh 'chmod +x mvnw'
             }
         }
         
-        stage('Build and Test') {
+        stage('Build') {
             steps {
-                sh 'mvn clean verify -Dspring.profiles.active=test'
+                sh './mvnw clean package -DskipTests'
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                sh './mvnw test'
             }
             post {
                 always {
                     junit '**/target/surefire-reports/*.xml'
-                    jacoco(
-                        execPattern: '**/target/jacoco.exec',
-                        classPattern: '**/target/classes',
-                        sourcePattern: '**/src/main/java'
-                    )
                 }
             }
         }
@@ -34,9 +39,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh """
-                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
-                    """
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
         }
@@ -46,19 +49,20 @@ pipeline {
                 script {
                     sh """
                         docker network create ${DOCKER_NETWORK} || true
-                        
-                        docker stop ${DOCKER_IMAGE} || true
-                        docker rm ${DOCKER_IMAGE} || true
+                        docker stop product-catalog-app || true
+                        docker rm product-catalog-app || true
                         
                         docker run -d \\
-                            --name ${DOCKER_IMAGE} \\
+                            --name product-catalog-app \\
                             --network ${DOCKER_NETWORK} \\
                             -p 8082:8080 \\
-                            -e SPRING_PROFILES_ACTIVE=prod \\
                             -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/product_manage \\
-                            -e SPRING_DATASOURCE_USERNAME=${DB_CREDS_USR} \\
-                            -e SPRING_DATASOURCE_PASSWORD=${DB_CREDS_PSW} \\
+                            -e SPRING_DATASOURCE_USERNAME=root \\
+                            -e SPRING_DATASOURCE_PASSWORD=root \\
+                            -e SPRING_PROFILES_ACTIVE=prod \\
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            
+                        docker image prune -f
                     """
                 }
             }
@@ -67,7 +71,7 @@ pipeline {
     
     post {
         always {
-            cleanWs()
+            deleteDir()
         }
         success {
             echo 'Pipeline completed successfully!'
