@@ -11,33 +11,32 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         APP_NAME = "product-catalog"
         DB_NAME = "product_manage"
+        DB_PASSWORD = "root"
         DOCKER_NETWORK = "product-catalog-network"
     }
     
     stages {
         stage('Build') {
             steps {
-                // Clean and package the application, skipping tests
                 sh 'mvn clean package -DskipTests'
             }
         }
         
         stage('Build Docker Image') {
             steps {
-                // Build the Docker image
                 sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
             }
         }
         
         stage('Deploy') {
             steps {
-                // Ensure Docker network exists
+                // Create network if not exists
                 sh '''
                     docker network inspect ${DOCKER_NETWORK} >/dev/null 2>&1 || \
                     docker network create ${DOCKER_NETWORK}
                 '''
                 
-                // Stop and remove existing containers
+                // Clean up existing containers
                 sh '''
                     docker stop ${APP_NAME} || true
                     docker rm ${APP_NAME} || true
@@ -45,29 +44,29 @@ pipeline {
                     docker rm ${DB_NAME} || true
                 '''
                 
-                // Start MySQL container
+                // Start MariaDB container
                 sh '''
                     docker run -d \
                         --name ${DB_NAME} \
                         --network ${DOCKER_NETWORK} \
-                        -e MYSQL_ROOT_PASSWORD=root \
-                        -e MYSQL_DATABASE=${DB_NAME} \
-                        mysql:8.0
+                        -e MARIADB_ROOT_PASSWORD=${DB_PASSWORD} \
+                        -e MARIADB_DATABASE=${DB_NAME} \
+                        mariadb:latest
                 '''
                 
-                // Wait for MySQL to be ready
+                // Wait for MariaDB to be ready
                 sh 'sleep 30'
                 
-                // Start application container
+                // Start Spring Boot application
                 sh '''
                     docker run -d \
                         --name ${APP_NAME} \
                         --network ${DOCKER_NETWORK} \
                         -p 8080:8080 \
                         -e SPRING_PROFILES_ACTIVE=prod \
-                        -e SPRING_DATASOURCE_URL=jdbc:mysql://${DB_NAME}:3306/${DB_NAME} \
+                        -e SPRING_DATASOURCE_URL=jdbc:mariadb://${DB_NAME}:3306/${DB_NAME} \
                         -e SPRING_DATASOURCE_USERNAME=root \
-                        -e SPRING_DATASOURCE_PASSWORD=root \
+                        -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
                         -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
                 '''
@@ -77,7 +76,6 @@ pipeline {
     
     post {
         always {
-            // Clean up workspace
             deleteDir()
         }
         success {
