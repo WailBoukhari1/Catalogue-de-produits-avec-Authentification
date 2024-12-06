@@ -25,6 +25,23 @@ pipeline {
     }
     
     stages {
+        stage('Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                    jacoco(
+                        execPattern: '**/target/jacoco.exec',
+                        classPattern: '**/target/classes',
+                        sourcePattern: '**/src/main/java',
+                        exclusionPattern: '**/src/test*'
+                    )
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mvn clean package -DskipTests'
