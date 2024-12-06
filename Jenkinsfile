@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'maven:3.9.5-eclipse-temurin-17-alpine'
+            args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.m2:/root/.m2'
+        }
+    }
     
     environment {
         DOCKER_IMAGE = "product-catalog"
@@ -18,14 +23,7 @@ pipeline {
         
         stage('Build and Test') {
             steps {
-                script {
-                    // Use Maven Docker image to build and test
-                    docker.image('maven:3.9.5-eclipse-temurin-17-alpine').inside {
-                        sh '''
-                            mvn clean package
-                        '''
-                    }
-                }
+                sh 'mvn clean package'
             }
             post {
                 always {
@@ -37,7 +35,11 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    // Install Docker CLI in the container
+                    sh '''
+                        apk add --no-cache docker-cli
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    '''
                 }
             }
         }
