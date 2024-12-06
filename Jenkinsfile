@@ -83,29 +83,39 @@ pipeline {
     
     post {
         always {
-            node {
-                cleanWs()
-                sh 'docker system prune -f'
+            script {
+                node('built-in') {  // Specify a node explicitly
+                    cleanWs()
+                    sh '''
+                        if command -v docker &> /dev/null; then
+                            docker system prune -f || true
+                        fi
+                    '''
+                }
             }
         }
         success {
-            node {
-                echo 'Pipeline completed successfully!'
-                emailext (
-                    subject: "Pipeline Success: ${currentBuild.fullDisplayName}",
-                    body: "The pipeline completed successfully.",
-                    to: '${DEFAULT_RECIPIENTS}'
-                )
+            script {
+                node('built-in') {  // Specify a node explicitly
+                    echo 'Pipeline completed successfully!'
+                    emailext (
+                        subject: "Pipeline Success: ${currentBuild.fullDisplayName}",
+                        body: "The pipeline completed successfully.",
+                        to: '${DEFAULT_RECIPIENTS}'
+                    )
+                }
             }
         }
         failure {
-            node {
-                echo 'Pipeline failed!'
-                emailext (
-                    subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-                    body: "The pipeline failed. Please check the Jenkins logs.",
-                    to: '${DEFAULT_RECIPIENTS}'
-                )
+            script {
+                node('built-in') {  // Specify a node explicitly
+                    echo 'Pipeline failed!'
+                    emailext (
+                        subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
+                        body: "The pipeline failed. Please check the Jenkins logs.",
+                        to: '${DEFAULT_RECIPIENTS}'
+                    )
+                }
             }
         }
     }
