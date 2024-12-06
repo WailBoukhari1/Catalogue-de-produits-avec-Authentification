@@ -15,6 +15,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                sh 'chmod +x mvnw'
             }
         }
         
@@ -69,7 +70,7 @@ pipeline {
     
     post {
         always {
-            cleanWs()
+            deleteDir()
         }
         success {
             echo 'Pipeline completed successfully!'
