@@ -15,7 +15,6 @@ pipeline {
     
     options {
         buildDiscarder(logRotator(numToKeepStr: '5'))
-        timestamps()
     }
     
     stages {
