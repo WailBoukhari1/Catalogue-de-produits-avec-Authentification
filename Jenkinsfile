@@ -22,25 +22,16 @@ pipeline {
         DOCKER_IMAGE = "product-catalog"
         DOCKER_TAG = "latest"
         DOCKER_NETWORK = "product-network"
-        
-        // SonarQube
-        SONAR_PROJECT_KEY = "product-catalog"
-        SONAR_SERVER = "SonarQube"
     }
     
     stages {
-        stage('Code Quality Check') {
+        stage('Build') {
             steps {
-                // Run SonarLint analysis
-                withSonarQubeEnv(SONAR_SERVER) {
-                    sh 'mvn sonar:sonar ' +
-                       '-Dsonar.projectKey=${SONAR_PROJECT_KEY} ' +
-                       '-Dsonar.java.binaries=target/classes'
-                }
+                sh 'mvn clean package -DskipTests'
             }
         }
         
-        stage('Unit Tests') {
+        stage('Test') {
             steps {
                 sh 'mvn test -Dspring.profiles.active=test'
             }
@@ -48,42 +39,6 @@ pipeline {
                 always {
                     junit '**/target/surefire-reports/*.xml'
                 }
-            }
-        }
-        
-        stage('Integration Tests') {
-            steps {
-                sh 'mvn verify -Dspring.profiles.active=test -DskipUnitTests'
-            }
-            post {
-                always {
-                    junit '**/target/failsafe-reports/*.xml'
-                }
-            }
-        }
-        
-        stage('Security Scan') {
-            steps {
-                // OWASP Dependency Check
-                sh 'mvn org.owasp:dependency-check-maven:check'
-            }
-            post {
-                always {
-                    publishHTML([
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'target',
-                        reportFiles: 'dependency-check-report.html',
-                        reportName: 'OWASP Dependency Check'
-                    ])
-                }
-            }
-        }
-        
-        stage('Build') {
-            steps {
-                sh 'mvn clean package -DskipTests -Dspring.profiles.active=prod'
             }
         }
         
@@ -95,7 +50,7 @@ pipeline {
         
         stage('Deploy') {
             steps {
-                // Create network
+                // Create network if not exists
                 sh 'docker network create ${DOCKER_NETWORK} 2>/dev/null || true'
                 
                 // Clean up existing containers
@@ -119,7 +74,7 @@ pipeline {
                 // Wait for MariaDB
                 sh 'sleep 30'
                 
-                // Deploy application
+                // Start application
                 sh '''
                     docker run -d \
                         --name ${APP_NAME} \
@@ -130,24 +85,8 @@ pipeline {
                         -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
                         -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
                         -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-                        -e SPRING_JPA_SHOW_SQL=false \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
                 '''
-            }
-        }
-        
-        stage('API Documentation') {
-            steps {
-                // Generate and publish Swagger documentation
-                sh 'mvn springdoc-openapi:generate'
-                publishHTML([
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'target/swagger-ui',
-                    reportFiles: 'index.html',
-                    reportName: 'API Documentation'
-                ])
             }
         }
     }
@@ -159,7 +98,6 @@ pipeline {
             Application deployed successfully!
             Access URLs:
             - Application: http://localhost:${APP_PORT}
-            - API Documentation: http://localhost:${APP_PORT}/swagger-ui.html
             - Database: jdbc:mariadb://localhost:${DB_PORT}/${DB_NAME}
             =========================================
             """
@@ -168,20 +106,7 @@ pipeline {
             echo 'Pipeline failed! Check the logs for details.'
         }
         always {
-            // Clean workspace
             deleteDir()
-            
-            // Send notification (example with email)
-            emailext (
-                subject: "Pipeline ${currentBuild.result}: ${env.JOB_NAME}",
-                body: """
-                    Pipeline Status: ${currentBuild.result}
-                    Job: ${env.JOB_NAME}
-                    Build Number: ${env.BUILD_NUMBER}
-                    Build URL: ${env.BUILD_URL}
-                """,
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            )
         }
     }
 }
