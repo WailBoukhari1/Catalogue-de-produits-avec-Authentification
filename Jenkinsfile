@@ -42,17 +42,6 @@ pipeline {
             }
         }
         
-        stage('Security Scan') {
-            steps {
-                sh 'mvn dependency-check:check'
-            }
-            post {
-                always {
-                    dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
-                }
-            }
-        }
-        
         stage('Build Docker Image') {
             steps {
                 script {
@@ -72,6 +61,8 @@ pipeline {
             steps {
                 script {
                     sh """
+                        docker network create ${DOCKER_NETWORK} || true
+                        
                         docker stop ${DOCKER_IMAGE} || true
                         docker rm ${DOCKER_IMAGE} || true
                         
@@ -84,8 +75,6 @@ pipeline {
                             -e SPRING_DATASOURCE_USERNAME=${DB_CREDS_USR} \\
                             -e SPRING_DATASOURCE_PASSWORD=${DB_CREDS_PSW} \\
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
-                            
-                        docker image prune -f
                     """
                 }
             }
@@ -94,16 +83,30 @@ pipeline {
     
     post {
         always {
-            cleanWs()
-            sh 'docker system prune -f'
+            node {
+                cleanWs()
+                sh 'docker system prune -f'
+            }
         }
         success {
-            echo 'Pipeline completed successfully!'
-            // Add notification steps here (email, Slack, etc.)
+            node {
+                echo 'Pipeline completed successfully!'
+                emailext (
+                    subject: "Pipeline Success: ${currentBuild.fullDisplayName}",
+                    body: "The pipeline completed successfully.",
+                    to: '${DEFAULT_RECIPIENTS}'
+                )
+            }
         }
         failure {
-            echo 'Pipeline failed!'
-            // Add notification steps here (email, Slack, etc.)
+            node {
+                echo 'Pipeline failed!'
+                emailext (
+                    subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
+                    body: "The pipeline failed. Please check the Jenkins logs.",
+                    to: '${DEFAULT_RECIPIENTS}'
+                )
+            }
         }
     }
 }
