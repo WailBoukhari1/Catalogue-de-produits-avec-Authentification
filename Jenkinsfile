@@ -19,36 +19,19 @@ pipeline {
     }
     
     stages {
-        stage('Checkout') {
+        stage('Build') {
             steps {
-                deleteDir()
-                checkout scm
+                sh 'mvn clean package -DskipTests'
             }
         }
         
-        stage('Build and Unit Tests') {
+        stage('Unit Tests') {
             steps {
-                sh '''
-                    mvn clean test \
-                        -Dspring.profiles.active=test \
-                        -Dmaven.test.failure.ignore=true \
-                        -Dsurefire.useFile=false
-                '''
+                sh 'mvn test'
             }
             post {
                 always {
-                    junit(
-                        allowEmptyResults: true,
-                        keepLongStdio: true,
-                        testResults: '**/target/surefire-reports/*.xml',
-                        skipMarkingBuildUnstable: true
-                    )
-                    
-                    jacoco(
-                        execPattern: '**/target/jacoco.exec',
-                        classPattern: '**/target/classes',
-                        sourcePattern: '**/src/main/java'
-                    )
+                    junit '**/target/surefire-reports/*.xml'
                 }
             }
         }
