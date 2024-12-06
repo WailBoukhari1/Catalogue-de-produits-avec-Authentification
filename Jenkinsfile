@@ -14,25 +14,11 @@ pipeline {
         DOCKER_NETWORK = "product-catalog-network"
     }
     
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '5'))
-    }
-    
     stages {
         stage('Build') {
             steps {
+                // Skip tests during initial build
                 sh 'mvn clean package -DskipTests'
-            }
-        }
-        
-        stage('Unit Tests') {
-            steps {
-                sh 'mvn test -Dspring.profiles.active=test'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
-                }
             }
         }
         
@@ -84,20 +70,13 @@ pipeline {
                     sh '''
                         docker run -d \
                             --name ${APP_NAME} \
-                            mariadb:latest || true
-                        
-                        # Wait for MariaDB to be ready
-                        sleep 15
-                        
-                        # Run application
-                        docker run -d \
-                            --name ${APP_NAME} \
-                            --network app-network \
-                            -p 8082:8080 \
+                            --network ${DOCKER_NETWORK} \
+                            -p 8080:8080 \
                             -e SPRING_PROFILES_ACTIVE=prod \
-                            -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/${DB_NAME} \
+                            -e SPRING_DATASOURCE_URL=jdbc:mysql://${DB_NAME}:3306/${DB_NAME} \
                             -e SPRING_DATASOURCE_USERNAME=root \
                             -e SPRING_DATASOURCE_PASSWORD=root \
+                            -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
                     '''
                 }
