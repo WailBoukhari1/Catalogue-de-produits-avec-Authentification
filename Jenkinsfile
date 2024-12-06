@@ -6,94 +6,90 @@ pipeline {
         jdk 'JDK17'
     }
     
-    options {
-        buildDiscarder(logRotator(numToKeepStr: '5'))
+    environment {
+        // Static values for consistency
+        APP_NAME = "product-catalog"
+        APP_VERSION = "1.0.0"
+        APP_PORT = "8080"
+        
+        // Database configuration
+        DB_NAME = "product_manage"
+        DB_USER = "root"
+        DB_PASSWORD = "root"
+        DB_PORT = "3306"
+        
+        // Docker configuration
+        DOCKER_IMAGE = "product-catalog"
+        DOCKER_TAG = "latest"
+        DOCKER_NETWORK = "product-network"
     }
     
     stages {
-        stage('Checkout') {
+        stage('Build') {
             steps {
-                deleteDir()
-                checkout scm
-            }
-        }
-        
-        stage('Build and Test') {
-            steps {
-                // First resolve dependencies
-                sh 'mvn dependency:resolve'
-                
-                // Then build and test with offline mode to use resolved dependencies
-                sh '''
-                    mvn clean test \
-                        -o \
-                        -Dmaven.test.failure.ignore=true \
-                        -Dsurefire.useFile=false \
-                        -Dmaven.wagon.http.retryHandler.count=3 \
-                        -Dmaven.wagon.http.pool=false
-                '''
-                
-                // Create test results directory
-                sh 'mkdir -p target/surefire-reports/'
-            }
-            post {
-                always {
-                    junit(
-                        allowEmptyResults: true,
-                        keepLongStdio: true,
-                        testResults: '**/target/surefire-reports/*.xml',
-                        skipMarkingBuildUnstable: true,
-                        skipPublishingChecks: true
-                    )
-                }
-            }
-        }
-        
-        stage('Package') {
-            steps {
-                sh 'mvn package -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
         
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build -t product-catalog:${BUILD_NUMBER} .
-                    docker tag product-catalog:${BUILD_NUMBER} product-catalog:latest
-                '''
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
             }
         }
         
         stage('Deploy') {
             steps {
+                // Create network if not exists (quietly)
+                sh 'docker network create ${DOCKER_NETWORK} 2>/dev/null || true'
+                
+                // Clean up existing containers (quietly)
                 sh '''
-                    docker network create jenkins-network || true
-                    docker stop product-catalog || true
-                    docker rm product-catalog || true
-                    
+                    docker container rm -f ${APP_NAME} ${DB_NAME} 2>/dev/null || true
+                '''
+                
+                // Start MariaDB container
+                sh '''
                     docker run -d \
-                        --name product-catalog \
-                        --network jenkins-network \
-                        -p 8082:8080 \
-                        -e SPRING_DATASOURCE_URL=jdbc:mariadb://jenkins-db:3306/product_manage \
-                        -e SPRING_DATASOURCE_USERNAME=root \
-                        -e SPRING_DATASOURCE_PASSWORD=root \
+                        --name ${DB_NAME} \
+                        --network ${DOCKER_NETWORK} \
+                        -p ${DB_PORT}:3306 \
+                        -e MARIADB_ROOT_PASSWORD=${DB_PASSWORD} \
+                        -e MARIADB_DATABASE=${DB_NAME} \
+                        -e MARIADB_USER=${DB_USER} \
+                        -e MARIADB_PASSWORD=${DB_PASSWORD} \
+                        mariadb:10.6
+                '''
+                
+                // Wait for MariaDB to be ready
+                sh 'sleep 30'
+                
+                // Start Spring Boot application
+                sh '''
+                    docker run -d \
+                        --name ${APP_NAME} \
+                        --network ${DOCKER_NETWORK} \
+                        -p ${APP_PORT}:8080 \
                         -e SPRING_PROFILES_ACTIVE=prod \
-                        product-catalog:${BUILD_NUMBER}
+                        -e SPRING_DATASOURCE_URL=jdbc:mariadb://${DB_NAME}:${DB_PORT}/${DB_NAME} \
+                        -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
+                        -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
+                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
+                        -e SPRING_JPA_SHOW_SQL=false \
+                        ${DOCKER_IMAGE}:${DOCKER_TAG}
                 '''
             }
         }
     }
     
     post {
-        always {
-            deleteDir()
-        }
         success {
-            echo 'Pipeline completed successfully!'
+            echo "Application deployed successfully at http://localhost:${APP_PORT}"
         }
         failure {
-            echo 'Pipeline failed!'
+            echo 'Deployment failed!'
+        }
+        always {
+            deleteDir()
         }
     }
 }

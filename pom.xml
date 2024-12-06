@@ -127,6 +127,7 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+
             <!-- Plugin for dependency checking -->
             <plugin>
                 <groupId>org.owasp</groupId>
