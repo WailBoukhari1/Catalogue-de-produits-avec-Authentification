@@ -1,33 +1,30 @@
 pipeline {
     agent any
     
-    tools {
-        maven 'Maven'
-        jdk 'JDK17'
-    }
     environment {
         DOCKER_IMAGE = "product-catalog"
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_NETWORK = "product-catalog-app_app-network"
+        DB_CREDS = credentials('db-credentials')
     }
     
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh 'chmod +x mvnw'
             }
         }
         
-        stage('Build') {
+        stage('Build and Test') {
             steps {
-                sh './mvnw clean package -DskipTests'
-            }
-        }
-        
-        stage('Test') {
-            steps {
-                sh './mvnw test'
+                script {
+                    // Use Maven Docker image to build and test
+                    docker.image('maven:3.9.5-eclipse-temurin-17-alpine').inside {
+                        sh '''
+                            mvn clean package
+                        '''
+                    }
+                }
             }
             post {
                 always {
@@ -56,8 +53,8 @@ pipeline {
                             --network ${DOCKER_NETWORK} \\
                             -p 8082:8080 \\
                             -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/product_manage \\
-                            -e SPRING_DATASOURCE_USERNAME=root \\
-                            -e SPRING_DATASOURCE_PASSWORD=root \\
+                            -e SPRING_DATASOURCE_USERNAME=\${DB_CREDS_USR} \\
+                            -e SPRING_DATASOURCE_PASSWORD=\${DB_CREDS_PSW} \\
                             -e SPRING_PROFILES_ACTIVE=prod \\
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
                             
