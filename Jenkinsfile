@@ -68,9 +68,7 @@ pipeline {
     
     post {
         always {
-            node {
-                deleteDir()
-            }
+            cleanWs()
         }
         success {
             echo 'Pipeline completed successfully!'
