@@ -84,7 +84,7 @@ pipeline {
     post {
         always {
             script {
-                node('built-in') {  // Specify a node explicitly
+                node('built-in') {
                     cleanWs()
                     sh '''
                         if command -v docker &> /dev/null; then
@@ -96,25 +96,15 @@ pipeline {
         }
         success {
             script {
-                node('built-in') {  // Specify a node explicitly
+                node('built-in') {
                     echo 'Pipeline completed successfully!'
-                    emailext (
-                        subject: "Pipeline Success: ${currentBuild.fullDisplayName}",
-                        body: "The pipeline completed successfully.",
-                        to: '${DEFAULT_RECIPIENTS}'
-                    )
                 }
             }
         }
         failure {
             script {
-                node('built-in') {  // Specify a node explicitly
+                node('built-in') {
                     echo 'Pipeline failed!'
-                    emailext (
-                        subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-                        body: "The pipeline failed. Please check the Jenkins logs.",
-                        to: '${DEFAULT_RECIPIENTS}'
-                    )
                 }
             }
         }
