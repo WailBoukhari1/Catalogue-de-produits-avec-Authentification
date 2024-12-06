@@ -2,8 +2,13 @@ pipeline {
     agent any
     
     tools {
-        maven 'Maven 3.9.5'
-        jdk 'JDK 17'
+        maven 'Maven'
+        jdk 'JDK17'
+    }
+    environment {
+        DOCKER_IMAGE = "product-catalog"
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKER_NETWORK = "product-catalog-app_app-network"
     }
     
     stages {
@@ -12,16 +17,16 @@ pipeline {
                 checkout scm
             }
         }
-
+        
         stage('Build') {
             steps {
-                bat 'mvn clean install -DskipTests'
+                sh './mvnw clean package -DskipTests'
             }
         }
         
         stage('Test') {
             steps {
-                bat 'mvn test'
+                sh './mvnw test'
             }
             post {
                 always {
@@ -30,26 +35,47 @@ pipeline {
             }
         }
         
-        stage('Package') {
+        stage('Build Docker Image') {
             steps {
-                bat 'mvn package -DskipTests'
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                script {
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
             }
         }
-
-        stage('Docker Build') {
+        
+        stage('Deploy') {
             steps {
-                bat 'docker build -t product-manage .'
+                script {
+                    sh """
+                        docker stop product-catalog-app || true
+                        docker rm product-catalog-app || true
+                        
+                        docker run -d \\
+                            --name product-catalog-app \\
+                            --network ${DOCKER_NETWORK} \\
+                            -p 8082:8080 \\
+                            -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/product_manage \\
+                            -e SPRING_DATASOURCE_USERNAME=root \\
+                            -e SPRING_DATASOURCE_PASSWORD=root \\
+                            -e SPRING_PROFILES_ACTIVE=prod \\
+                            ${DOCKER_IMAGE}:${DOCKER_TAG}
+                            
+                        docker image prune -f
+                    """
+                }
             }
         }
     }
     
     post {
-        failure {
-            echo 'Pipeline failed!'
+        always {
+            cleanWs()
         }
         success {
-            echo 'Pipeline succeeded!'
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
