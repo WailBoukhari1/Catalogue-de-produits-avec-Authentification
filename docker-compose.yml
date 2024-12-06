@@ -1,46 +1,55 @@
-version: '3.8'
+  services:
+    app:
+      build: .
+      ports:
+        - "8082:8080"
+      environment:
+        - SPRING_PROFILES_ACTIVE=prod
+        - SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/product_manage
+        - SPRING_DATASOURCE_USERNAME=root
+        - SPRING_DATASOURCE_PASSWORD=root
+      depends_on:
+        db:
+          condition: service_healthy
+      restart: unless-stopped
 
-services:
-  app:
-    build: .
-    ports:
-      - "8082:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/product_manage
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
+    db:
+      image: mariadb:latest
+      environment:
+        - MYSQL_ROOT_PASSWORD=root
+        - MYSQL_DATABASE=product_manage
+      ports:
+        - "3307:3306"
+      volumes:
+        - db_data:/var/lib/mysql
+      healthcheck:
+        test: ["CMD", "mariadb", "-h", "localhost", "-u", "root", "-proot", "-e", "SELECT 1"]
+        interval: 10s
+        timeout: 10s
+        retries: 10
+        start_period: 30s
 
-  db:
-    image: mariadb:latest
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=product_manage
-    ports:
-      - "3307:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mariadb", "-h", "localhost", "-u", "root", "-proot", "-e", "SELECT 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
+    jenkins:
+      image: jenkins/jenkins:lts-jdk17
+      ports:
+        - "8081:8080"
+        - "50000:50000"
+      volumes:
+        - jenkins_home:/var/jenkins_home
+        - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+        - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+        - JENKINS_OPTS="--prefix=/jenkins"
+      user: root
+      privileged: true
+      restart: unless-stopped
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+        start_period: 40s
 
-  jenkins:
-    image: jenkins/jenkins:lts-jdk17
-    ports:
-      - "8081:8080"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
-
-volumes:
-  db_data:
-  jenkins_home:
+  volumes:
+    db_data:
+    jenkins_home:
