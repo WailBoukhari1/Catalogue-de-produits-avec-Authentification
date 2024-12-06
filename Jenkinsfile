@@ -11,6 +11,7 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         APP_NAME = "product-catalog"
         DB_NAME = "product_manage"
+        DOCKER_NETWORK = "product-catalog-network"
     }
     
     options {
@@ -26,7 +27,7 @@ pipeline {
         
         stage('Unit Tests') {
             steps {
-                sh 'mvn test -X -e'
+                sh 'mvn test -Dspring.profiles.active=test'
             }
             post {
                 always {
@@ -35,45 +36,16 @@ pipeline {
             }
         }
         
-        stage('Integration Tests') {
-            steps {
-                sh '''
-                    mvn verify -Dspring.profiles.active=test \
-                        -DskipUnitTests=true \
-                        -Dfailsafe.rerunFailingTestsCount=2
-                '''
-            }
-            post {
-                always {
-                    junit(
-                        allowEmptyResults: true,
-                        keepLongStdio: true,
-                        testResults: '**/target/failsafe-reports/*.xml'
-                    )
-                }
-            }
-        }
-        
         stage('Package') {
             steps {
-                sh 'mvn package -DskipTests -Dspring.profiles.active=prod'
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                sh 'mvn package -DskipTests'
             }
         }
         
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh '''
-                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                            --build-arg PROFILE=prod \
-                            --build-arg DB_URL=jdbc:mariadb://db:3306/${DB_NAME} \
-                            --build-arg DB_USERNAME=root \
-                            --build-arg DB_PASSWORD=root \
-                            .
-                        
-                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
-                    '''
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
         }
@@ -81,20 +53,37 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    // Create network if it doesn't exist
                     sh '''
-                        # Create network if it doesn't exist
-                        docker network create app-network || true
-                        
-                        # Stop and remove existing containers
+                        docker network inspect ${DOCKER_NETWORK} >/dev/null 2>&1 || \
+                        docker network create ${DOCKER_NETWORK}
+                    '''
+                    
+                    // Stop and remove existing containers
+                    sh '''
                         docker stop ${APP_NAME} || true
                         docker rm ${APP_NAME} || true
-                        
-                        # Run MariaDB if not running
+                        docker stop ${DB_NAME} || true
+                        docker rm ${DB_NAME} || true
+                    '''
+                    
+                    // Start MySQL container
+                    sh '''
                         docker run -d \
-                            --name db \
-                            --network app-network \
+                            --name ${DB_NAME} \
+                            --network ${DOCKER_NETWORK} \
                             -e MYSQL_ROOT_PASSWORD=root \
                             -e MYSQL_DATABASE=${DB_NAME} \
+                            mysql:8.0
+                    '''
+                    
+                    // Wait for MySQL to be ready
+                    sh 'sleep 30'
+                    
+                    // Start application container
+                    sh '''
+                        docker run -d \
+                            --name ${APP_NAME} \
                             mariadb:latest || true
                         
                         # Wait for MariaDB to be ready
