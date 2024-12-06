@@ -15,6 +15,7 @@ pipeline {
     
     options {
         buildDiscarder(logRotator(numToKeepStr: '5'))
+        timestamps()
     }
     
     stages {
@@ -80,51 +81,55 @@ pipeline {
         
         stage('Build Docker Image') {
             steps {
-                sh '''
-                    docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                        --build-arg PROFILE=prod \
-                        --build-arg DB_URL=jdbc:mariadb://db:3306/${DB_NAME} \
-                        --build-arg DB_USERNAME=root \
-                        --build-arg DB_PASSWORD=root \
-                        .
-                    
-                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
-                '''
+                script {
+                    sh '''
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                            --build-arg PROFILE=prod \
+                            --build-arg DB_URL=jdbc:mariadb://db:3306/${DB_NAME} \
+                            --build-arg DB_USERNAME=root \
+                            --build-arg DB_PASSWORD=root \
+                            .
+                        
+                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                    '''
+                }
             }
         }
         
         stage('Deploy') {
             steps {
-                sh '''
-                    # Create network if it doesn't exist
-                    docker network create app-network || true
-                    
-                    # Stop and remove existing containers
-                    docker stop ${APP_NAME} || true
-                    docker rm ${APP_NAME} || true
-                    
-                    # Run MariaDB if not running
-                    docker run -d \
-                        --name db \
-                        --network app-network \
-                        -e MYSQL_ROOT_PASSWORD=root \
-                        -e MYSQL_DATABASE=${DB_NAME} \
-                        mariadb:latest || true
-                    
-                    # Wait for MariaDB to be ready
-                    sleep 15
-                    
-                    # Run application
-                    docker run -d \
-                        --name ${APP_NAME} \
-                        --network app-network \
-                        -p 8082:8080 \
-                        -e SPRING_PROFILES_ACTIVE=prod \
-                        -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/${DB_NAME} \
-                        -e SPRING_DATASOURCE_USERNAME=root \
-                        -e SPRING_DATASOURCE_PASSWORD=root \
-                        ${DOCKER_IMAGE}:${DOCKER_TAG}
-                '''
+                script {
+                    sh '''
+                        # Create network if it doesn't exist
+                        docker network create app-network || true
+                        
+                        # Stop and remove existing containers
+                        docker stop ${APP_NAME} || true
+                        docker rm ${APP_NAME} || true
+                        
+                        # Run MariaDB if not running
+                        docker run -d \
+                            --name db \
+                            --network app-network \
+                            -e MYSQL_ROOT_PASSWORD=root \
+                            -e MYSQL_DATABASE=${DB_NAME} \
+                            mariadb:latest || true
+                        
+                        # Wait for MariaDB to be ready
+                        sleep 15
+                        
+                        # Run application
+                        docker run -d \
+                            --name ${APP_NAME} \
+                            --network app-network \
+                            -p 8082:8080 \
+                            -e SPRING_PROFILES_ACTIVE=prod \
+                            -e SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/${DB_NAME} \
+                            -e SPRING_DATASOURCE_USERNAME=root \
+                            -e SPRING_DATASOURCE_PASSWORD=root \
+                            ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    '''
+                }
             }
         }
     }
