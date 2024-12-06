@@ -9,8 +9,6 @@ pipeline {
         DOCKER_IMAGE = "product-catalog"
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_NETWORK = "product-catalog-app_app-network"
-        JAVA_HOME = tool 'JDK17'
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
     }
     
     stages {
@@ -18,8 +16,6 @@ pipeline {
             steps {
                 checkout scm
                 sh 'chmod +x mvnw'
-                sh 'echo $JAVA_HOME'
-                sh 'java -version'
             }
         }
         
