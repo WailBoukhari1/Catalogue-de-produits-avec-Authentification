@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.5-eclipse-temurin-17-alpine'
-            args '-v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.m2:/root/.m2'
-        }
-    }
+    agent any
     
     environment {
         DOCKER_IMAGE = "product-catalog"
@@ -22,13 +17,7 @@ pipeline {
         
         stage('Build and Test') {
             steps {
-                sh '''
-                    mvn clean verify \
-                        -Dspring.profiles.active=test \
-                        -Dspring.datasource.url=jdbc:h2:mem:testdb \
-                        -Dspring.datasource.username=sa \
-                        -Dspring.datasource.password=
-                '''
+                sh 'mvn clean verify -Dspring.profiles.active=test'
             }
             post {
                 always {
@@ -45,14 +34,9 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh '''
-                        apk add --no-cache docker-cli
-                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
-                            --build-arg JAR_FILE=target/*.jar \
-                            --build-arg DB_USERNAME=${DB_CREDS_USR} \
-                            --build-arg DB_PASSWORD=${DB_CREDS_PSW} \
-                            .
-                    '''
+                    sh """
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    """
                 }
             }
         }
@@ -83,30 +67,13 @@ pipeline {
     
     post {
         always {
-            script {
-                node('built-in') {
-                    cleanWs()
-                    sh '''
-                        if command -v docker &> /dev/null; then
-                            docker system prune -f || true
-                        fi
-                    '''
-                }
-            }
+            cleanWs()
         }
         success {
-            script {
-                node('built-in') {
-                    echo 'Pipeline completed successfully!'
-                }
-            }
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            script {
-                node('built-in') {
-                    echo 'Pipeline failed!'
-                }
-            }
+            echo 'Pipeline failed!'
         }
     }
 }
