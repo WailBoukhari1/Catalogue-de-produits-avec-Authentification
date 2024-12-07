@@ -25,7 +25,14 @@ pipeline {
     }
     
     stages {
-        stage('Test') {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+                checkout scm
+            }
+        }
+
+        stage('Unit Tests') {
             steps {
                 sh 'mvn clean test'
             }
@@ -40,67 +47,103 @@ pipeline {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
         }
         
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                script {
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
             }
         }
         
-        stage('Deploy') {
+        stage('Deploy to Development') {
+            when {
+                branch 'develop'
+            }
             steps {
-                // Create network if not exists (quietly)
-                sh 'docker network create ${DOCKER_NETWORK} 2>/dev/null || true'
-                
-                // Clean up existing containers (quietly)
-                sh '''
-                    docker container rm -f ${APP_NAME} ${DB_NAME} 2>/dev/null || true
-                '''
-                
-                // Start MariaDB container
-                sh '''
-                    docker run -d \
-                        --name ${DB_NAME} \
-                        --network ${DOCKER_NETWORK} \
-                        -p ${DB_PORT}:3306 \
-                        -e MARIADB_ROOT_PASSWORD=${DB_PASSWORD} \
-                        -e MARIADB_DATABASE=${DB_NAME} \
-                        -e MARIADB_USER=${DB_USER} \
-                        -e MARIADB_PASSWORD=${DB_PASSWORD} \
-                        mariadb:10.6
-                '''
-                
-                // Wait for MariaDB to be ready
-                sh 'sleep 30'
-                
-                // Start Spring Boot application
-                sh '''
-                    docker run -d \
-                        --name ${APP_NAME} \
-                        --network ${DOCKER_NETWORK} \
-                        -p ${APP_PORT}:8080 \
-                        -e SPRING_PROFILES_ACTIVE=prod \
-                        -e SPRING_DATASOURCE_URL=jdbc:mariadb://${DB_NAME}:${DB_PORT}/${DB_NAME} \
-                        -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
-                        -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
-                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update \
-                        -e SPRING_JPA_SHOW_SQL=false \
-                        ${DOCKER_IMAGE}:${DOCKER_TAG}
-                '''
+                script {
+                    // Create network if not exists
+                    sh "docker network create ${DOCKER_NETWORK} || true"
+                    
+                    // Stop and remove existing containers
+                    sh """
+                        docker container rm -f ${APP_NAME} ${DB_NAME} || true
+                    """
+                    
+                    // Start MariaDB container
+                    sh """
+                        docker run -d \
+                            --name ${DB_NAME} \
+                            --network ${DOCKER_NETWORK} \
+                            -p ${DB_PORT}:3306 \
+                            -e MARIADB_ROOT_PASSWORD=${DB_PASSWORD} \
+                            -e MARIADB_DATABASE=${DB_NAME} \
+                            -e MARIADB_USER=${DB_USER} \
+                            -e MARIADB_PASSWORD=${DB_PASSWORD} \
+                            mariadb:10.6
+                    """
+                    
+                    // Wait for MariaDB to be ready
+                    sh 'sleep 30'
+                    
+                    // Start application container
+                    sh """
+                        docker run -d \
+                            --name ${APP_NAME} \
+                            --network ${DOCKER_NETWORK} \
+                            -p ${APP_PORT}:8080 \
+                            -e SPRING_PROFILES_ACTIVE=dev \
+                            -e SPRING_DATASOURCE_URL=jdbc:mariadb://${DB_NAME}:3306/${DB_NAME} \
+                            -e SPRING_DATASOURCE_USERNAME=${DB_USER} \
+                            -e SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD} \
+                            ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    """
+                }
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                // Add production deployment steps here
+                echo 'Deploying to production...'
             }
         }
     }
     
     post {
         success {
-            echo "Application deployed successfully at http://localhost:${APP_PORT}"
+            echo """
+                Application deployed successfully!
+                Access the application at: http://localhost:${APP_PORT}
+                Swagger UI: http://localhost:${APP_PORT}/swagger-ui/index.html
+            """
         }
         failure {
-            echo 'Deployment failed!'
+            echo 'Pipeline failed! Check the logs for details.'
         }
         always {
-            deleteDir()
+            // Clean up workspace
+            cleanWs()
+            
+            // Send email notification
+            emailext (
+                subject: "${BUILD_STATUS}: Pipeline '${JOB_NAME} [${BUILD_NUMBER}]'",
+                body: """
+                    Pipeline Status: ${BUILD_STATUS}
+                    Job: ${JOB_NAME} [${BUILD_NUMBER}]
+                    More info at: ${BUILD_URL}
+                """,
+                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+            )
         }
     }
 }

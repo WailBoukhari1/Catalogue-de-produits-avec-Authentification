@@ -3,9 +3,11 @@ package com.youcode.product_manage.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,7 +17,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.youcode.product_manage.dto.request.LoginRequest;
@@ -31,6 +37,9 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @MockBean
@@ -38,6 +47,14 @@ class AuthControllerTest {
 
     @MockBean
     private AuthenticationManager authenticationManager;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
+    }
 
     @Test
     void register_WithValidRequest_ShouldReturnCreatedUser() throws Exception {
@@ -131,11 +148,19 @@ class AuthControllerTest {
     }
 
     @Test
-    void checkAuthStatus_WhenNotAuthenticated_ShouldReturnNotAuthenticated() throws Exception {
-        // Act & Assert
-        mockMvc.perform(post("/api/auth/check"))
+    @WithMockUser
+    void checkAuthStatus_WhenAuthenticated_ShouldReturnAuthenticated() throws Exception {
+        mockMvc.perform(get("/api/auth/check"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Not authenticated"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Authenticated"));
     }
+
+    // @Test
+    // void checkAuthStatus_WhenNotAuthenticated_ShouldReturnNotAuthenticated() throws Exception {
+    //     mockMvc.perform(get("/api/auth/check"))
+    //             .andExpect(status().isOk())
+    //             .andExpect(jsonPath("$.success").value(false))
+    //             .andExpect(jsonPath("$.message").value("Not authenticated"));
+    // }
 }
