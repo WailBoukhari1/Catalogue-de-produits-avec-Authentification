@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/product_manage
+    url: jdbc:mariadb://localhost:3306/product_manage?createDatabaseIfNotExist=true
     username: root
     password:
     driver-class-name: org.mariadb.jdbc.Driver

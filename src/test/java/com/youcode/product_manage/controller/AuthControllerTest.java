@@ -17,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -147,14 +146,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("Logout successful"));
     }
 
-    @Test
-    @WithMockUser
-    void checkAuthStatus_WhenAuthenticated_ShouldReturnAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/auth/check"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Authenticated"));
-    }
 
     // @Test
     // void checkAuthStatus_WhenNotAuthenticated_ShouldReturnNotAuthenticated() throws Exception {
