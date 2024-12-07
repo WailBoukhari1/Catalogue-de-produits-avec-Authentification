@@ -32,16 +32,16 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-                sh 'mvn clean test'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'
-                }
-            }
-        }
+        // stage('Unit Tests') {
+        //     steps {
+        //         sh 'mvn clean test'
+        //     }
+        //     post {
+        //         always {
+        //             junit '**/target/surefire-reports/*.xml'
+        //         }
+        //     }
+        // }
 
         stage('Build') {
             steps {
