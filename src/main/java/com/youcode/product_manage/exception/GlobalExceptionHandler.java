@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.youcode.product_manage.dto.response.ApiResponse;
+import com.youcode.product_manage.dto.response.AppApiResponse;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -23,76 +23,76 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiResponse<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public AppApiResponse<String> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return AppApiResponse.error(ex.getMessage());
     }
 
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<String> handleValidationException(ValidationException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public AppApiResponse<String> handleValidationException(ValidationException ex) {
+        return AppApiResponse.error(ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException ex) {
+    public AppApiResponse<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        return ApiResponse.error("Validation failed", errors);
+        return AppApiResponse.error("Validation failed", errors);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ApiResponse<String> handleBadCredentialsException(BadCredentialsException ex) {
-        return ApiResponse.error("Invalid username or password");
+    public AppApiResponse<String> handleBadCredentialsException(BadCredentialsException ex) {
+        return AppApiResponse.error("Invalid username or password");
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ApiResponse<String> handleAccessDeniedException(AccessDeniedException ex) {
-        return ApiResponse.error("Access denied");
+    public AppApiResponse<String> handleAccessDeniedException(AccessDeniedException ex) {
+        return AppApiResponse.error("Access denied");
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<String> handleGlobalException(Exception ex) {
-        return ApiResponse.error("An unexpected error occurred");
+    public AppApiResponse<String> handleGlobalException(Exception ex) {
+        return AppApiResponse.error("An unexpected error occurred");
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiResponse<String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+    public AppApiResponse<String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         if (ex.getCause() instanceof ConstraintViolationException) {
-            return ApiResponse.error("Database constraint violation: Duplicate entry or invalid reference");
+            return AppApiResponse.error("Database constraint violation: Duplicate entry or invalid reference");
         }
-        return ApiResponse.error("Data integrity violation occurred");
+        return AppApiResponse.error("Data integrity violation occurred");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<String> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public AppApiResponse<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return AppApiResponse.error(ex.getMessage());
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiResponse<String> handleEntityNotFoundException(EntityNotFoundException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public AppApiResponse<String> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return AppApiResponse.error(ex.getMessage());
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiResponse<String> handleDuplicateResourceException(DuplicateResourceException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public AppApiResponse<String> handleDuplicateResourceException(DuplicateResourceException ex) {
+        return AppApiResponse.error(ex.getMessage());
     }
 
     @ExceptionHandler(InvalidOperationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<String> handleInvalidOperationException(InvalidOperationException ex) {
-        return ApiResponse.error(ex.getMessage());
+    public AppApiResponse<String> handleInvalidOperationException(InvalidOperationException ex) {
+        return AppApiResponse.error(ex.getMessage());
     }
 }

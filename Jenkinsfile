@@ -10,7 +10,7 @@ pipeline {
         // Static values for consistency
         APP_NAME = "product-catalog"
         APP_VERSION = "1.0.0"
-        APP_PORT = "8086"
+        APP_PORT = "8082"
         
         // Database configuration
         DB_NAME = "product_manage"
@@ -114,7 +114,7 @@ pipeline {
                         echo "Démarrage du nouveau conteneur"
                         docker run -d \
                             --name ${APP_NAME} \
-                            -p ${APP_PORT}:8086 \
+                            -p ${APP_PORT}:8082 \
                             -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE} \
                             ${APP_NAME}:latest
                     '''
