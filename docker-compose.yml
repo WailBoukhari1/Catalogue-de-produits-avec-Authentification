@@ -1,3 +1,4 @@
+version: '3'
 services:
   app:
     build: .
@@ -30,18 +31,18 @@ services:
       start_period: 30s
 
   jenkins:
-    image: jenkins/jenkins:lts-jdk17
-    ports:
-      - "8081:8080"
-      - "50000:50000"
+    image: jenkins/jenkins:lts
+    privileged: true
+    user: root
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:8080"
+      - "50000:50000"
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
       - JENKINS_OPTS="--prefix=/jenkins"
-    user: root
-    privileged: true
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/login"]

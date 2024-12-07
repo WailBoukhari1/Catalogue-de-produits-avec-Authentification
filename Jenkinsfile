@@ -26,6 +26,9 @@ pipeline {
         // Added new environment variables
         MAVEN_OPTS = '-Dhttps.protocols=TLSv1.2'
         SPRING_PROFILES_ACTIVE = 'dev'
+        
+        // Add Docker socket mount
+        DOCKER_SOCKET = '/var/run/docker.sock:/var/run/docker.sock'
     }
     
     stages {
@@ -93,7 +96,14 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    // Ensure Docker is available
                     sh '''
+                        # Install Docker if not present
+                        if ! command -v docker &> /dev/null; then
+                            curl -fsSL https://get.docker.com -o get-docker.sh
+                            sh get-docker.sh
+                        fi
+                        
                         echo "Arrêt du conteneur existant s'il existe"
                         docker stop ${APP_NAME} || true
                         docker rm ${APP_NAME} || true
