@@ -27,7 +27,7 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                cleanWs()
+                deleteDir()
                 checkout scm
             }
         }
@@ -113,7 +113,6 @@ pipeline {
                 branch 'main'
             }
             steps {
-                // Add production deployment steps here
                 echo 'Deploying to production...'
             }
         }
@@ -131,19 +130,7 @@ pipeline {
             echo 'Pipeline failed! Check the logs for details.'
         }
         always {
-            // Clean up workspace
-            cleanWs()
-            
-            // Send email notification
-            emailext (
-                subject: "${BUILD_STATUS}: Pipeline '${JOB_NAME} [${BUILD_NUMBER}]'",
-                body: """
-                    Pipeline Status: ${BUILD_STATUS}
-                    Job: ${JOB_NAME} [${BUILD_NUMBER}]
-                    More info at: ${BUILD_URL}
-                """,
-                recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-            )
+            deleteDir()
         }
     }
 }
