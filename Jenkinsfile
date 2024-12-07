@@ -37,13 +37,6 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Checkout') {
-            steps {
-                git branch: 'master',
-                    url: 'https://github.com/anwar-bouchehboun/Catalogue-de-produits-avec-Authentification.git'
-            }
-        }
 
         stage('Clean') {
             steps {
